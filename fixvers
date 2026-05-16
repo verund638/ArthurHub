@@ -1,3 +1,4 @@
+print("FOY.LUA LOADED - NEW VERSION")
 local prefix = "!"
 local http = game:GetService("HttpService")
 local cas = game:GetService("ContextActionService")
