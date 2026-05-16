@@ -2,25 +2,40 @@ local prefix = "!"
 local http = game:GetService("HttpService")
 local cas = game:GetService("ContextActionService")
 
--- readfile ve writefile fonksiyonlarının varlığını güvenli şekilde kontrol et
-local hasFileSystem = pcall(function() return readfile and writefile end)
+-- Güvenli dosya okuma/yazma fonksiyonları
+local function safeReadFile(filename)
+	local success, result = pcall(function()
+		if readfile then
+			return readfile(filename)
+		end
+		return nil
+	end)
+	return success and result or nil
+end
 
-local s,cmdldata = false, nil
-if hasFileSystem then
-	s,cmdldata = pcall(function()
-		return http:JSONDecode(readfile("TCOCommandLineData.json"))
+local function safeWriteFile(filename, content)
+	pcall(function()
+		if writefile then
+			writefile(filename, content)
+		end
 	end)
 end
 
-function savecmdldata()
-	if hasFileSystem then
-		pcall(function()
-			writefile("TCOCommandLineData.json",http:JSONEncode(cmdldata))
-		end)
+-- Ayarları yükle
+local cmdldata
+local fileContent = safeReadFile("TCOCommandLineData.json")
+if fileContent then
+	local success, data = pcall(function()
+		return http:JSONDecode(fileContent)
+	end)
+	if success then
+		cmdldata = data
+		prefix = cmdldata.Prefix.Local or prefix
 	end
 end
 
-if not s then
+-- Varsayılan ayarlar
+if not cmdldata then
 	cmdldata = {
 		Prefix = {
 			Local = prefix
@@ -28,10 +43,17 @@ if not s then
 		AutoExecScriptPack = false,
 		ClickedRotoolSwitch = false
 	}
-	savecmdldata()
-else
-	prefix = cmdldata.Prefix.Local
 end
+
+function savecmdldata()
+	pcall(function()
+		local encoded = http:JSONEncode(cmdldata)
+		safeWriteFile("TCOCommandLineData.json", encoded)
+	end)
+end
+
+-- İlk kayıt
+savecmdldata()
 if cmdldata.AutoExecScriptPack then
 	if not getgenv().scriptpackalreadyexecuted then
 		getgenv().scriptpackalreadyexecuted = true
