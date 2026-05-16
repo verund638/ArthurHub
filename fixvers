@@ -2,8 +2,8 @@ local prefix = "!"
 local http = game:GetService("HttpService")
 local cas = game:GetService("ContextActionService")
 
--- readfile ve writefile fonksiyonlarının varlığını kontrol et
-local hasFileSystem = readfile and writefile
+-- readfile ve writefile fonksiyonlarının varlığını güvenli şekilde kontrol et
+local hasFileSystem = pcall(function() return readfile and writefile end)
 
 local s,cmdldata = false, nil
 if hasFileSystem then
@@ -14,7 +14,9 @@ end
 
 function savecmdldata()
 	if hasFileSystem then
-		writefile("TCOCommandLineData.json",http:JSONEncode(cmdldata))
+		pcall(function()
+			writefile("TCOCommandLineData.json",http:JSONEncode(cmdldata))
+		end)
 	end
 end
 
